@@ -1,9 +1,9 @@
+use crate::error::ApiError;
 use crate::schema::*;
+use actix_web::web;
+use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::sqlite::SqliteConnection;
-use diesel::prelude::*;
-use crate::error::ApiError;
-use actix_web::web;
 use serde::{Deserialize, Serialize};
 
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
@@ -21,10 +21,7 @@ impl Repository {
         Self { pool }
     }
 
-    pub async fn crate_todo(
-        &self,
-        new_todo: NewTodo,
-    ) -> Result<Todo, ApiError> {
+    pub async fn crate_todo(&self, new_todo: NewTodo) -> Result<Todo, ApiError> {
         let mut conn = self.pool.get()?;
         let todo = web::block(move || {
             diesel::insert_into(todos::table)
@@ -36,27 +33,18 @@ impl Repository {
         Ok(todo)
     }
 
-    pub async fn list_todos (
-        &self,
-    ) -> Result<Vec<Todo>, ApiError> {
+    pub async fn list_todos(&self) -> Result<Vec<Todo>, ApiError> {
         let mut conn = self.pool.get()?;
-        let res = web::block(move || {
-            todos::table.load(&mut conn)
-        })
-        .await??;
-        
+        let res = web::block(move || todos::table.load(&mut conn)).await??;
+
         Ok(res)
     }
 
     pub async fn get_todo(&self, id: i32) -> Result<Todo, ApiError> {
         let mut conn = self.pool.get()?;
-        let res = web::block(move || {
-            todos::table.find(id)
-                .first(&mut conn)
-                .optional()
-        })
-        .await??
-        .ok_or(ApiError::NotFound)?;
+        let res = web::block(move || todos::table.find(id).first(&mut conn).optional())
+            .await??
+            .ok_or(ApiError::NotFound)?;
 
         Ok(res)
     }
@@ -75,7 +63,7 @@ pub struct Todo {
     title: String,
     description: Option<String>,
     done: bool,
-    published: bool
+    published: bool,
 }
 
 #[cfg(test)]
@@ -89,4 +77,3 @@ mod tests {
         assert!(repo.pool.get().is_ok());
     }
 }
-
