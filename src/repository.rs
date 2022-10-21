@@ -21,37 +21,37 @@ impl Repository {
         Self { pool }
     }
 
-    pub async fn crate_post(
+    pub async fn crate_todo(
         &self,
-        new_post: NewPost,
-    ) -> Result<Post, ApiError> {
+        new_todo: NewTodo,
+    ) -> Result<Todo, ApiError> {
         let mut conn = self.pool.get()?;
-        let post = web::block(move || {
-            diesel::insert_into(posts::table)
-                .values(new_post)
+        let todo = web::block(move || {
+            diesel::insert_into(todos::table)
+                .values(new_todo)
                 .get_result(&mut conn)
         })
         .await??;
 
-        Ok(post)
+        Ok(todo)
     }
 
-    pub async fn list_posts (
+    pub async fn list_todos (
         &self,
-    ) -> Result<Vec<Post>, ApiError> {
+    ) -> Result<Vec<Todo>, ApiError> {
         let mut conn = self.pool.get()?;
         let res = web::block(move || {
-            posts::table.load(&mut conn)
+            todos::table.load(&mut conn)
         })
         .await??;
         
         Ok(res)
     }
 
-    pub async fn get_post(&self, id: i32) -> Result<Post, ApiError> {
+    pub async fn get_todo(&self, id: i32) -> Result<Todo, ApiError> {
         let mut conn = self.pool.get()?;
         let res = web::block(move || {
-            posts::table.find(id)
+            todos::table.find(id)
                 .first(&mut conn)
                 .optional()
         })
@@ -63,14 +63,14 @@ impl Repository {
 }
 
 #[derive(Deserialize, diesel::Insertable)]
-#[diesel(table_name = posts)]
-pub struct NewPost {
+#[diesel(table_name = todos)]
+pub struct NewTodo {
     title: String,
     body: String,
 }
 
 #[derive(Serialize, diesel::Queryable)]
-pub struct Post {
+pub struct Todo {
     id: i32,
     title: String,
     body: String,

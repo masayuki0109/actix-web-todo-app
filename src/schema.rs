@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    posts (id) {
+    todos (id) {
         id -> Integer,
         title -> Text,
         body -> Text,
