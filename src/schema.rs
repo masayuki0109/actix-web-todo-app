@@ -4,7 +4,8 @@ diesel::table! {
     todos (id) {
         id -> Integer,
         title -> Text,
-        body -> Text,
+        description -> Nullable<Text>,
+        done -> Bool,
         published -> Bool,
     }
 }

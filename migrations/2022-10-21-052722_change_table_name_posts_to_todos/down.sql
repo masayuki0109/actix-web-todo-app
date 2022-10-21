@@ -1,1 +1,0 @@
-alter table todos rename to posts;

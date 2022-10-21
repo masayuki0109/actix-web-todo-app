@@ -66,14 +66,15 @@ impl Repository {
 #[diesel(table_name = todos)]
 pub struct NewTodo {
     title: String,
-    body: String,
+    description: Option<String>,
 }
 
 #[derive(Serialize, diesel::Queryable)]
 pub struct Todo {
     id: i32,
     title: String,
-    body: String,
+    description: Option<String>,
+    done: bool,
     published: bool
 }
 
