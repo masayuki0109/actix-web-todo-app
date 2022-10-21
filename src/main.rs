@@ -7,6 +7,8 @@ use actix_web::{web, App, HttpResponse, HttpServer};
 use error::ApiError;
 use repository::{NewTodo, Repository};
 
+use crate::repository::TodoDoneRequest;
+
 #[actix_web::get("/todos")]
 async fn list_todos(repo: web::Data<Repository>) -> Result<HttpResponse, ApiError> {
     let res = repo.list_todos().await?;
@@ -14,23 +16,45 @@ async fn list_todos(repo: web::Data<Repository>) -> Result<HttpResponse, ApiErro
 }
 
 #[actix_web::post("/todos")]
-async fn create_post(
+async fn create_todo(
     repo: web::Data<Repository>,
-    new_post: web::Json<NewTodo>,
+    new_todo: web::Json<NewTodo>,
 ) -> Result<HttpResponse, ApiError> {
-    let new_post = new_post.into_inner();
-    let post = repo.crate_todo(new_post).await?;
+    let new_todo = new_todo.into_inner();
+    let post = repo.crate_todo(new_todo).await?;
     Ok(HttpResponse::Ok().json(post))
 }
 
 #[actix_web::get("/todos/{id}")]
-async fn get_post(
+async fn get_todo(
     repo: web::Data<Repository>,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, ApiError> {
     let id = path.into_inner();
     let res = repo.get_todo(id).await?;
     Ok(HttpResponse::Ok().json(res))
+}
+
+#[actix_web::put("/todos/{id}")]
+async fn done_todo(
+    repo: web::Data<Repository>,
+    path: web::Path<i32>,
+    req_done: web::Json<TodoDoneRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let id = path.into_inner();
+    let req = req_done.into_inner();
+    repo.done_todo(id, req.done).await?;
+    Ok(HttpResponse::NoContent().finish())
+}
+
+#[actix_web::delete("/todos/{id}")]
+async fn delete_todo(
+    repo: web::Data<Repository>,
+    path: web::Path<i32>,
+) -> Result<HttpResponse, ApiError> {
+    let id = path.into_inner();
+    repo.delete_todo(id).await?;
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[actix_web::main]
@@ -43,9 +67,11 @@ async fn main() -> std::io::Result<()> {
             .app_data(repo.clone())
             .wrap(Logger::default())
             .wrap(NormalizePath::trim())
-            .service(create_post)
+            .service(create_todo)
             .service(list_todos)
-            .service(get_post)
+            .service(get_todo)
+            .service(done_todo)
+            .service(delete_todo)
     })
     .bind(("0.0.0.0", 8080))?
     .run()

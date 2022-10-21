@@ -95,6 +95,11 @@ pub struct Todo {
     published: bool,
 }
 
+#[derive(Deserialize)]
+pub struct TodoDoneRequest {
+    pub done: bool,
+}
+
 #[derive(Deserialize, AsChangeset)]
 #[diesel(table_name = todos)]
 pub struct TodoChangeset {
