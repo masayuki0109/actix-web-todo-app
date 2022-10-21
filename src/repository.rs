@@ -48,6 +48,35 @@ impl Repository {
 
         Ok(res)
     }
+
+    pub async fn update_todo(&self, id: i32, changeset: TodoChangeset) -> Result<Todo, ApiError> {
+        let mut conn = self.pool.get()?;
+        let todo = web::block(move || {
+            diesel::update(todos::table.find(id)).set(changeset).get_result(&mut conn)
+        })
+        .await??;
+
+        Ok(todo)
+    }
+
+    pub async fn done_todo(&self, id: i32, done: bool) -> Result<(), ApiError> {
+        let mut conn = self.pool.get()?;
+        web::block(move || {
+            diesel::update(todos::table.find(id))
+                .set(todos::done.eq(done))
+                .execute(&mut conn)
+        })
+        .await??;
+
+        Ok(())
+    }
+
+    pub async fn delete_todo(&self, id: i32) -> Result<(), ApiError> {
+        let mut conn = self.pool.get()?;
+        web::block(move || diesel::delete(todos::table.find(id)).execute(&mut conn)).await??;
+
+        Ok(())
+    }
 }
 
 #[derive(Deserialize, diesel::Insertable)]
@@ -64,6 +93,13 @@ pub struct Todo {
     description: Option<String>,
     done: bool,
     published: bool,
+}
+
+#[derive(Deserialize, AsChangeset)]
+#[diesel(table_name = todos)]
+pub struct TodoChangeset {
+    title: Option<String>,
+    description: Option<String>,
 }
 
 #[cfg(test)]
